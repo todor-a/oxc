@@ -42,7 +42,7 @@ fn safely_shadows_undefined(symbol_id: SymbolId, ctx: &LintContext<'_>) -> bool 
     let symbol_table = ctx.semantic().symbols();
     if symbol_table.get_name(symbol_id).as_str() == "undefined" {
         let mut no_assign = true;
-        for reference_id in symbol_table.get_resolved_references(symbol_id) {
+        for reference_id in symbol_table.get_resolved_reference_ids(symbol_id) {
             let reference = symbol_table.get_reference(*reference_id);
             if reference.is_write() {
                 no_assign = false;

@@ -11,7 +11,7 @@ Original   -> Minified   -> Gzip       Brotli
 
 555.77 kB  -> 274.89 kB  -> 91.40 kB   76.86 kB   d3.js
 
-977.19 kB  -> 456.44 kB  -> 123.71 kB  107.15 kB  bundle.min.js
+977.19 kB  -> 456.49 kB  -> 123.75 kB  107.16 kB  bundle.min.js
 
 1.25 MB    -> 677.74 kB  -> 166.58 kB  134.57 kB  three.js
 
@@ -19,7 +19,7 @@ Original   -> Minified   -> Gzip       Brotli
 
 3.20 MB    -> 1.04 MB    -> 333.32 kB  269.37 kB  echarts.js
 
-6.69 MB    -> 2.40 MB    -> 498.46 kB  390.61 kB  antd.js
+6.69 MB    -> 2.40 MB    -> 498.45 kB  390.40 kB  antd.js
 
-10.82 MB   -> 3.53 MB    -> 903.10 kB  692.91 kB  typescript.js
+10.82 MB   -> 3.53 MB    -> 902.99 kB  693.10 kB  typescript.js
 

@@ -101,6 +101,34 @@ impl<'a> Compressor<'a> {
         matches!(stmt, Statement::DebuggerStatement(_)) && self.options.drop_debugger
     }
 
+    fn drop_empty_variable_declaration<'b>(&self, stmt: &'b Statement<'a>) -> bool {
+        if let Statement::Declaration(Declaration::VariableDeclaration(decl)) = stmt {
+            return decl.declarations.is_empty();
+        }
+        false
+    }
+
+    fn drop_unused_variable_declarator<'b>(&mut self, stmt: &'b Statement<'a>) -> bool {
+        if let Statement::Declaration(Declaration::FunctionDeclaration(decl)) = stmt
+            && let Some(func_name) = &decl.id {
+            let symbol_table = self.semantic.symbols();
+            // decl.declarations.retain(|decl| {
+                // if let BindingPattern::BindingIdentifier(ident) = &decl.id
+                // && decl.init.is_none()
+            dbg!(func_name, symbol_table
+                    .get_resolved_reference_ids(func_name.symbol_id.clone().into_inner()));
+                return if symbol_table
+                    .get_resolved_reference_ids(func_name.symbol_id.clone().into_inner())
+                    .is_empty()
+                     {
+                    true
+                } else {
+                    false
+                }
+            }
+        false
+    }
+
     /// Join consecutive var statements
     fn join_vars<'b>(&mut self, stmts: &'b mut Vec<'a, Statement<'a>>) {
         // Collect all the consecutive ranges that contain joinable vars.
@@ -256,13 +284,18 @@ impl<'a> Compressor<'a> {
 
 impl<'a, 'b> VisitMut<'a, 'b> for Compressor<'a> {
     fn visit_statements(&mut self, stmts: &'b mut Vec<'a, Statement<'a>>) {
-        stmts.retain(|stmt| !self.drop_debugger(stmt));
+        stmts.retain(|stmt| {
+            !self.drop_debugger(stmt) && !self.drop_unused_variable_declarator(stmt)
+        });
 
         self.join_vars(stmts);
 
         for stmt in stmts.iter_mut() {
+            // self.drop_unused_variable_declarator(stmt);
             self.visit_statement(stmt);
         }
+
+        stmts.retain(|stmt| !self.drop_empty_variable_declaration(stmt));
     }
 
     fn visit_statement(&mut self, stmt: &'b mut Statement<'a>) {
