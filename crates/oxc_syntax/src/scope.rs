@@ -7,6 +7,18 @@ define_index_type! {
     pub struct ScopeId = u32;
 }
 
+impl ScopeId {
+    const ROOT_SCOPE_ID: ScopeId = ScopeId::from_raw_unchecked(0);
+
+    pub const fn root_id() -> Self {
+        Self::ROOT_SCOPE_ID
+    }
+    pub const fn is_root(&self) -> bool {
+        self.raw() == Self::root_id().raw()
+    }
+
+}
+
 bitflags! {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct ScopeFlags: u16 {

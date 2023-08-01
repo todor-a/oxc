@@ -51,7 +51,7 @@ impl ScopeTree {
     }
 
     pub fn root_scope_id(&self) -> ScopeId {
-        ScopeId::new(0)
+        ScopeId::root_id()
     }
 
     pub fn root_flags(&self) -> ScopeFlags {
