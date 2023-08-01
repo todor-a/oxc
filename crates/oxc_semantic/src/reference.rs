@@ -2,7 +2,7 @@ use bitflags::bitflags;
 use oxc_index::define_index_type;
 use oxc_span::{Atom, Span};
 
-use crate::symbol::SymbolId;
+use crate::{symbol::SymbolId, AstNodeId};
 
 define_index_type! {
     pub struct ReferenceId = u32;
@@ -14,6 +14,8 @@ pub struct Reference {
     /// The name of the identifier that was referred to
     name: Atom,
     symbol_id: Option<SymbolId>,
+    /// `None` when not within an AST (e.g. HIR)
+    ast_node_id: Option<AstNodeId>,
     /// Describes how this referenced is used by other AST nodes. References can
     /// be reads, writes, or both.
     flag: ReferenceFlag,
@@ -21,7 +23,7 @@ pub struct Reference {
 
 impl Reference {
     pub fn new(span: Span, name: Atom, flag: ReferenceFlag) -> Self {
-        Self { span, name, symbol_id: None, flag }
+        Self { span, name, symbol_id: None, ast_node_id: None, flag }
     }
 
     pub fn span(&self) -> Span {
@@ -38,6 +40,14 @@ impl Reference {
 
     pub(crate) fn set_symbol_id(&mut self, symbol_id: SymbolId) {
         self.symbol_id = Some(symbol_id);
+    }
+
+    pub fn ast_node_id(&self) -> Option<AstNodeId> {
+        self.ast_node_id
+    }
+
+    pub(crate) fn set_ast_node_id(&mut self, ast_node_id: AstNodeId) {
+        self.ast_node_id = Some(ast_node_id)
     }
 
     /// Returns `true` if the identifier value was read. This is not mutually
