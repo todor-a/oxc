@@ -1,7 +1,9 @@
 use oxc_ast::{ast::*, AstKind};
 #[allow(clippy::wildcard_imports)]
 use oxc_semantic::Reference;
-use oxc_semantic::{AstNode, ScopeFlags, ScopeId, SymbolFlags, SymbolId};
+use oxc_semantic::{
+    AstNode, AstNodes, ScopeFlags, ScopeId, ScopeTree, SymbolFlags, SymbolId, SymbolTable,
+};
 use oxc_span::{Atom, Span};
 
 use crate::LintContext;
@@ -27,11 +29,42 @@ impl<'ctx, 'a> SymbolContext<'ctx, 'a> {
 
         Self { ctx, name, symbol_id, symbol_flags, scope_id, scope_flags, declaration }
     }
+
     pub fn name(&self) -> &Atom {
         self.name
     }
+
     pub fn declaration(&self) -> &AstNode<'a> {
         self.declaration
+    }
+
+    pub fn scope_id(&self) -> ScopeId {
+        self.scope_id
+    }
+
+    pub fn symbol_id(&self) -> SymbolId {
+        self.symbol_id
+    }
+
+    /// Get the nth parent above this symbol's declaration. 0-indexed.
+    pub fn nth_parent(&self, n: usize) -> Option<&AstNode<'a>> {
+        self.nodes().iter_parents(self.declaration.id()).nth(n + 1)
+    }
+
+    pub fn diagnostic<T: Into<oxc_diagnostics::Error>>(&self, diagnostic: T) {
+        self.ctx.diagnostic(diagnostic);
+    }
+
+    pub fn nodes(&self) -> &AstNodes<'a> {
+        self.ctx.nodes()
+    }
+
+    pub fn scopes(&self) -> &ScopeTree {
+        self.ctx.scopes()
+    }
+
+    pub fn symbols(&self) -> &SymbolTable {
+        self.ctx.symbols()
     }
 
     pub fn is_exported(&self) -> bool {
@@ -45,26 +78,51 @@ impl<'ctx, 'a> SymbolContext<'ctx, 'a> {
         // self.scope_id.is_root()
     }
 
-    pub fn has_usages(&self) -> bool {
-        // let can_skip_self_reassignment_check = self.symbol_flags.intersects(SymbolFlags::Class | SymbolFlags::ImportBinding | SymbolFlags::Type);
-        // let can_skip_self_call_check = self.symbol_flags.intersects(SymbolFlags::ImportBinding | SymbolFlags::CatchVariable | SymbolFlags::Type);
+    // pub fn has_usages(&self) -> bool {
+    //     // let can_skip_self_reassignment_check = self.symbol_flags.intersects(SymbolFlags::Class | SymbolFlags::ImportBinding | SymbolFlags::Type);
+    //     // let can_skip_self_call_check = self.symbol_flags.intersects(SymbolFlags::ImportBinding | SymbolFlags::CatchVariable | SymbolFlags::Type);
 
+    //     let do_self_reassignment_check = self.symbol_flags.intersects(SymbolFlags::Variable);
+    //     let do_self_call_check =
+    //         !self.symbol_flags.intersects(SymbolFlags::ImportBinding | SymbolFlags::CatchVariable);
+
+    //     self.ctx
+    //         .symbols()
+    //         .get_resolved_references(self.symbol_id)
+    //         .filter(|r| r.is_read())
+    //         .filter(|r| !do_self_reassignment_check || dbg!(!self.is_self_reassignment(r)))
+    //         .filter(|r| !do_self_call_check || dbg!(!self.is_self_call(r)))
+    //         // .filter(|r| !(do_self_reassignment_check && !self.is_self_reassignment(r)))
+    //         // .filter(|r| !(do_self_call_check && !self.is_self_call(r)))
+    //         .count()
+    //         > 0
+    // }
+    pub fn has_usages(&self) -> bool {
         let do_self_reassignment_check = self.symbol_flags.intersects(SymbolFlags::Variable);
         let do_self_call_check =
             !self.symbol_flags.intersects(SymbolFlags::ImportBinding | SymbolFlags::CatchVariable);
 
-        self.ctx
-            .symbols()
-            .get_resolved_references(self.symbol_id)
-            .filter(|r| r.is_read())
-            .filter(|r| !(do_self_reassignment_check && self.is_self_reassignment(r)))
-            .filter(|r| !(do_self_call_check && self.is_self_call(r)))
-            .count()
-            > 0
+        let rs: Vec<_> = 
+            self.ctx.symbols().get_resolved_references(self.symbol_id).filter(|r| r.is_read()).collect();
+        // for reference in
+        //     self.ctx.symbols().get_resolved_references(self.symbol_id).filter(|r|
+        //     r.is_read())
+        for reference in dbg!(rs)
+        {
+            if do_self_reassignment_check && self.is_self_reassignment(reference) {
+                continue
+            }
+            if do_self_call_check && self.is_self_call(reference) {
+                continue
+            }
+            return true
+        }
+
+        false
     }
 
     fn is_self_reassignment(&self, reference: &Reference) -> bool {
-        let Some(symbol_id) = reference.symbol_id() else {
+        let Some(symbol_id) = dbg!(reference).symbol_id() else {
             debug_assert!(
                 false,
                 "is_self_update() should only be called on resolved symbol references"
@@ -91,7 +149,7 @@ impl<'ctx, 'a> SymbolContext<'ctx, 'a> {
                         "While traversing {name}'s reference's parent nodes, found {name}'s declaration. This algorithm assumes that variable declarations do not appear in references."
                     );
                     // definitely used, short-circuit
-                    return true;
+                    return false
                 }
                 // When symbol is being assigned a new value, we flag the reference
                 // as only affecting itself until proven otherwise.
@@ -109,14 +167,14 @@ impl<'ctx, 'a> SymbolContext<'ctx, 'a> {
                             if id.name == name {
                                 is_used_by_others = false;
                             } else {
-                                return true; // we can short-circuit
+                                return false; // we can short-circuit
                             }
                         }
                         // variable is being used to index another variable, this is
                         // always a usage
                         // todo: check self index?
                         SimpleAssignmentTarget::MemberAssignmentTarget(_) => {
-                            return true;
+                            return false
                         }
                         _ => {
                             // debug_assert!(false, "is_self_update only supports AssignmentTargetIdentifiers right now. Please update this function. Found {t:#?}",);
@@ -139,20 +197,34 @@ impl<'ctx, 'a> SymbolContext<'ctx, 'a> {
             }
         }
 
-        is_used_by_others
+        !is_used_by_others
     }
 
     fn is_self_call(&self, reference: &Reference) -> bool {
+        dbg!(reference);
         let scopes = self.ctx.scopes();
 
         // determine what scope the call occurred in
         let Some(node_id) = reference.ast_node_id() else { return true };
+        let node = self
+            .nodes()
+            .iter_parents(node_id)
+            .skip(1)
+            .filter(|n| matches!(n.kind(), AstKind::ParenthesizedExpression(_)))
+            .nth(0);
+        if !matches!(
+            node.map(|n| n.kind()),
+            Some(AstKind::CallExpression(_) | AstKind::NewExpression(_))
+        ) {
+            return false;
+        }
+
         let scope_id = self.ctx.nodes().get_node(node_id).scope_id();
 
         let is_called_inside_self = scopes.ancestors(scope_id).any(|scope_id| {
             scope_id == self.scope_id && scopes.get_flags(scope_id).intersects(ScopeFlags::Function)
         });
 
-        return !is_called_inside_self;
+        return is_called_inside_self;
     }
 }

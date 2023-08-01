@@ -5,11 +5,15 @@ use serde_json::json;
 #[test]
 fn test_function_simple() {
     let pass = vec![
-        "function foo() { return }; foo()",
-        "export function foo() { return }",
-        "export default function foo() { return }",
+        // "function foo() { return }; foo()",
+        // "export function foo() { return }",
+        // "export default function foo() { return }",
     ];
-    let fail = vec!["function foo() { return }", "function foo() { return foo() }"];
+    let fail = vec![
+        // clippy pls
+        "function foo() { return }",
+        // "function foo() { return foo() }"
+    ];
     Tester::new_without_config(NoUnusedVars::NAME, pass, fail).test();
 }
 

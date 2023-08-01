@@ -13,6 +13,7 @@ pub use options::*;
 use oxc_ast::{ast::*, AstKind};
 use oxc_macros::declare_oxc_lint;
 use oxc_semantic::{ScopeFlags, SymbolId};
+use oxc_span::{Span, GetSpan};
 use regex::Regex;
 
 use crate::{context::LintContext, rule::Rule};
@@ -252,10 +253,61 @@ impl Rule for NoUnusedVars {
 
     fn run_on_symbol(&self, symbol_id: SymbolId, lint_ctx: &LintContext<'_>) {
         let ctx = SymbolContext::new(symbol_id, lint_ctx);
+        println!("checking symbol '{}'", ctx.name());
 
         // order matters. We want to call cheap/high "yield" functions first.
-        if ctx.is_exported() || self.is_ignored(&ctx) || ctx.has_usages() {
+        if ctx.is_exported() || self.is_ignored(&ctx) || dbg!(ctx.has_usages()) {
             return
+        }
+
+        let name = ctx.name();
+        match ctx.declaration().kind() {
+            AstKind::ModuleDeclaration(module) => {
+                debug_assert!(!module.is_export());
+                // todo: should we try to find the span for the single import?
+                ctx.diagnostic(NoUnusedVarsDiagnostic::import(name.clone(), module.span()));
+            }
+            AstKind::VariableDeclarator(decl) => {
+                if decl.kind.is_var() && self.vars == VarsOption::Local {
+                    return;
+                }
+                if let Some(UnusedBindingResult(span, false)) =
+                    self.check_unused_binding_pattern(&ctx, &decl.id)
+                {
+                    ctx.diagnostic(NoUnusedVarsDiagnostic::decl(name.clone(), span));
+                }
+            }
+            AstKind::Function(f) => {
+                f.id.as_ref().map_or_else(
+                    || debug_assert!(false, "Found unused function by symbol id but it is anonymous. This shouldn't be possible."),
+                    |id| {
+                        debug_assert!(&id.name == name, "Unused function with different name {} found while checking symbol named {name}", &id.name);
+                        ctx.diagnostic(NoUnusedVarsDiagnostic::decl(name.clone(), id.span));
+                    }
+                );
+            }
+            AstKind::Class(class) => {
+                class.id.as_ref().map_or_else(
+                    || debug_assert!(false, "Found unused class by symbol id but it is anonymous. This shouldn't be possible."),
+                    |id| {
+                        debug_assert!(&id.name == name, "Unused class with different name {} found while checking symbol named {name}", &id.name);
+                        ctx.diagnostic(NoUnusedVarsDiagnostic::decl(name.clone(), id.span));
+                    }
+                );
+            }
+            AstKind::CatchClause(catch) => {
+                catch.param.as_ref().map_or_else(
+                    || debug_assert!(false, "Found unused error in catch block by symbol id but it is anonymous. This shouldn't be possible."),
+                    |id| {
+                        // debug_assert!(&id.name == name, "Unused error in catch block with different name {} found while checking symbol named {name}", &id.name);
+                        ctx.diagnostic(NoUnusedVarsDiagnostic::decl(name.clone(), id.span()));
+                    }
+                );
+            }
+            AstKind::FormalParameters(params) => {
+                self.check_unused_arguments(&ctx, params)
+            }
+            s => debug_assert!(false, "handle decl kind {}", s.debug_name()),
         }
 
         // match ctx.declaration().kind() {
@@ -276,4 +328,171 @@ impl Rule for NoUnusedVars {
 
     }
 
+}
+
+#[derive(Debug, Clone, Copy, Default)]
+struct UnusedBindingResult(Span, bool);
+impl UnusedBindingResult {
+    pub fn span(&self) -> Span {
+        self.0
+    }
+    pub fn is_ignore(&self) -> bool {
+        self.1
+    }
+    pub fn ignore(mut self) -> Self {
+        self.1 = true;
+        self
+    }
+    pub fn or(mut self, ignored: bool) -> Self {
+        self.1 = self.1 || ignored;
+        self
+    }
+}
+impl From<Span> for UnusedBindingResult {
+    fn from(value: Span) -> Self {
+        Self(value, false)
+    }
+}
+impl From<UnusedBindingResult> for Span {
+    fn from(value: UnusedBindingResult) -> Self {
+        value.0
+    }
+}
+
+impl NoUnusedVars {
+    fn check_unused_binding_pattern<'a>(
+        &self,
+        ctx: &SymbolContext<'_, 'a>,
+        id: &BindingPattern<'a>,
+    ) -> Option<UnusedBindingResult> {
+        match &id.kind {
+            BindingPatternKind::BindingIdentifier(id) => {
+                if id.name == ctx.name() {
+                    return Some(id.span.into());
+                } else {
+                    return None;
+                }
+            }
+            BindingPatternKind::AssignmentPattern(id) => {
+                return self.check_unused_binding_pattern(ctx, &id.left);
+            }
+            BindingPatternKind::ArrayPattern(arr) => {
+                for el in arr.elements.iter() {
+                    let Some(el) = el else { continue };
+                    if let Some(id) = el.kind.identifier() {
+                        if id.name != ctx.name() {
+                            continue;
+                        }
+                        let ignored = self.is_ignored_array_destructured(&id.name);
+                        return Some(UnusedBindingResult(id.span, ignored));
+                    } else {
+                        return self.check_unused_binding_pattern(ctx, el);
+                    }
+                }
+                return None;
+            }
+            BindingPatternKind::ObjectPattern(obj) => {
+                for el in obj.properties.iter() {
+                    let maybe_res = self.check_unused_binding_pattern(ctx, &el.value);
+                    if let Some(res) = maybe_res {
+                        // has a rest sibling and the rule is configured to
+                        // ignore variables that have them
+                        let is_ignorable = self.ignore_rest_siblings && obj.rest.is_some();
+                        return Some(res.or(is_ignorable));
+                    }
+                }
+                return obj
+                    .rest
+                    .as_ref()
+                    .map(|rest| self.check_unused_binding_pattern(ctx, &rest.argument))
+                    .flatten();
+            }
+        }
+    }
+
+    fn check_unused_arguments<'a>(&self, ctx: &SymbolContext<'_, 'a>, args: &FormalParameters<'a>) {
+        // short-circuit when not checking args or arg is inside a setter method
+        // (setters always need params, even if unused)
+        if self.args == ArgsOption::None
+            || matches!(
+                ctx.nth_parent(1).map(|n| n.kind()),
+                Some(
+                    AstKind::MethodDefinition(MethodDefinition {
+                        kind: MethodDefinitionKind::Set,
+                        ..
+                    }) | AstKind::ObjectProperty(ObjectProperty { kind: PropertyKind::Set, .. })
+                )
+            )
+        {
+            return;
+        }
+        match self.args {
+            ArgsOption::All => {
+                // skip ignored or used args
+                if self.is_ignored_arg(ctx.name()) || ctx.has_usages() {
+                    return;
+                }
+
+                #[allow(clippy::collection_is_never_read)]
+                args.items
+                    .iter()
+                    .map(|arg| self.check_unused_binding_pattern(ctx, &arg.pattern))
+                    .find(Option::is_some)
+                    .flatten()
+                    .map_or_else(
+                        || {},
+                        |UnusedBindingResult(span, ignored)| {
+                            if !ignored {
+                                ctx.diagnostic(NoUnusedVarsDiagnostic::decl(ctx.name().clone(), span));
+                            }
+                        },
+                    );
+            }
+            ArgsOption::AfterUsed => {
+                if self.is_ignored_arg(ctx.name()) || ctx.has_usages() {
+                    return;
+                }
+
+                // set to true when a arg defined before the current one is
+                // found to be used
+                let mut has_prev_used = false;
+
+                let scope_id = ctx.scope_id();
+                let symbol_id = ctx.symbol_id();
+                for arg in args.items.iter().rev() {
+                    if has_prev_used {
+                        break;
+                    }
+
+                    let Some(binding) = arg.pattern.kind.identifier() else { continue };
+                    let Some(arg_symbol_id) = ctx.scopes().get_binding(scope_id, &binding.name) else { continue };
+
+                    // we've reached the current argument, break
+                    if arg_symbol_id == symbol_id {
+                        break;
+                    }
+
+                    if ctx.has_usages() {
+                        has_prev_used = true;
+                    }
+                }
+
+                if !has_prev_used {
+                    for arg in args.items.iter() {
+                        if let Some(UnusedBindingResult(arg_span, false)) = self.check_unused_binding_pattern(ctx, &arg.pattern)
+                        {
+                            ctx.diagnostic(NoUnusedVarsDiagnostic::decl(
+                                ctx.name().clone(),
+                                arg_span,
+                            ));
+                            return;
+                        }
+                    }
+                }
+            }
+            ArgsOption::None => {
+                unreachable!();
+            }
+        };
+    }
 }

@@ -24,8 +24,7 @@ fn test_var_simple() {
 fn test_var_assignment() {
     let pass = vec![
         "let a = 1; b = a + 1; console.log(b)",
-        // fixme: bug in semantic analysis
-        // "let a = 1; b = ++a; console.log(b)",
+        "let a = 1; b = ++a; console.log(b)",
         // "export const Foo = class Bar {}",
     ];
     let fail = vec![];
