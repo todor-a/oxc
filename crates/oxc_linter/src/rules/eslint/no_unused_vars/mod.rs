@@ -252,8 +252,28 @@ impl Rule for NoUnusedVars {
 
     fn run_on_symbol(&self, symbol_id: SymbolId, lint_ctx: &LintContext<'_>) {
         let ctx = SymbolContext::new(symbol_id, lint_ctx);
-        if ctx.is_exported() || self.is_ignored(&ctx) {
+
+        // order matters. We want to call cheap/high "yield" functions first.
+        if ctx.is_exported() || self.is_ignored(&ctx) || ctx.has_usages() {
             return
         }
+
+        // match ctx.declaration().kind() {
+        //     AstKind::ModuleDeclaration(decl) => {
+        //         self.check_unused_module_declaration(&ctx, decl);
+        //     }
+        //     AstKind::VariableDeclarator(decl) => {
+        //         self.check_unused_variable_declarator(&ctx, decl);
+        //     }
+        //     AstKind::Function(f) => self.check_unused_function(&ctx, f),
+        //     AstKind::Class(class) => self.check_unused_class(&ctx, class),
+        //     AstKind::CatchClause(catch) => self.check_unused_catch_clause(&ctx, catch),
+        //     AstKind::FormalParameters(params) => {
+        //         self.check_unused_arguments(&ctx, params);
+        //     }
+        //     s => debug_assert!(false, "handle decl kind {}", s.debug_name()),
+        // };
+
     }
+
 }

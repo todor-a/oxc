@@ -1282,6 +1282,15 @@ impl<'a> BindingPatternKind<'a> {
     pub fn is_binding_identifier(&self) -> bool {
         matches!(self, Self::BindingIdentifier(_))
     }
+
+    /// Get a binding's name if it is not a destructuring pattern
+    pub fn identifier(&self) -> Option<&BindingIdentifier> {
+        match self {
+            Self::BindingIdentifier(id) => Some(&id),
+            Self::AssignmentPattern(id) => id.left.kind.identifier(),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Debug, Hash)]
