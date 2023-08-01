@@ -1,9 +1,9 @@
 mod diagnostic;
 mod ignored;
 mod options;
-mod usage;
 #[cfg(test)]
 mod tests;
+mod usage;
 
 pub use diagnostic::*;
 pub use ignored::*;
@@ -13,7 +13,7 @@ pub use options::*;
 use oxc_ast::{ast::*, AstKind};
 use oxc_macros::declare_oxc_lint;
 use oxc_semantic::{ScopeFlags, SymbolId};
-use oxc_span::{Span, GetSpan};
+use oxc_span::{GetSpan, Span};
 use regex::Regex;
 
 use crate::{context::LintContext, rule::Rule};
@@ -257,7 +257,7 @@ impl Rule for NoUnusedVars {
 
         // order matters. We want to call cheap/high "yield" functions first.
         if ctx.is_exported() || self.is_ignored(&ctx) || dbg!(ctx.has_usages()) {
-            return
+            return;
         }
 
         let name = ctx.name();
@@ -304,9 +304,7 @@ impl Rule for NoUnusedVars {
                     }
                 );
             }
-            AstKind::FormalParameters(params) => {
-                self.check_unused_arguments(&ctx, params)
-            }
+            AstKind::FormalParameters(params) => self.check_unused_arguments(&ctx, params),
             s => debug_assert!(false, "handle decl kind {}", s.debug_name()),
         }
 
@@ -325,9 +323,7 @@ impl Rule for NoUnusedVars {
         //     }
         //     s => debug_assert!(false, "handle decl kind {}", s.debug_name()),
         // };
-
     }
-
 }
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -443,7 +439,10 @@ impl NoUnusedVars {
                         || {},
                         |UnusedBindingResult(span, ignored)| {
                             if !ignored {
-                                ctx.diagnostic(NoUnusedVarsDiagnostic::decl(ctx.name().clone(), span));
+                                ctx.diagnostic(NoUnusedVarsDiagnostic::decl(
+                                    ctx.name().clone(),
+                                    span,
+                                ));
                             }
                         },
                     );
@@ -463,6 +462,7 @@ impl NoUnusedVars {
                     if has_prev_used {
                         break;
                     }
+                    println!("checking {:?} for previous usages", arg.pattern.kind.identifier());
 
                     let Some(binding) = arg.pattern.kind.identifier() else { continue };
                     let Some(arg_symbol_id) = ctx.scopes().get_binding(scope_id, &binding.name) else { continue };
@@ -472,14 +472,15 @@ impl NoUnusedVars {
                         break;
                     }
 
-                    if ctx.has_usages() {
+                    if ctx.has_usages_of(arg_symbol_id) {
                         has_prev_used = true;
                     }
                 }
 
                 if !has_prev_used {
                     for arg in args.items.iter() {
-                        if let Some(UnusedBindingResult(arg_span, false)) = self.check_unused_binding_pattern(ctx, &arg.pattern)
+                        if let Some(UnusedBindingResult(arg_span, false)) =
+                            self.check_unused_binding_pattern(ctx, &arg.pattern)
                         {
                             ctx.diagnostic(NoUnusedVarsDiagnostic::decl(
                                 ctx.name().clone(),

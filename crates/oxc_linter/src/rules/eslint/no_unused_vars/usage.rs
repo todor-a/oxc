@@ -68,14 +68,31 @@ impl<'ctx, 'a> SymbolContext<'ctx, 'a> {
     }
 
     pub fn is_exported(&self) -> bool {
-        self.is_root()
+        (self.is_root()
             && (self.symbol_flags.contains(SymbolFlags::Export)
-                || self.ctx.semantic().module_record().exported_bindings.contains_key(self.name))
+                || self.ctx.semantic().module_record().exported_bindings.contains_key(self.name)))
+            || self.in_export_node()
+    }
+    fn in_export_node(&self) -> bool {
+        for parent in self.ctx.nodes().iter_parents(self.declaration.id()).skip(1) {
+            match parent.kind() {
+                AstKind::ModuleDeclaration(module) => {
+                    return module.is_export();
+                }
+                AstKind::VariableDeclaration(_) => {
+                    continue;
+                }
+                _ => {
+                    return false;
+                }
+            }
+        }
+        false
     }
 
     pub const fn is_root(&self) -> bool {
-        self.scope_flags.contains(ScopeFlags::Top)
-        // self.scope_id.is_root()
+        // self.scope_flags.contains(ScopeFlags::Top)
+        self.scope_id.is_root()
     }
 
     // pub fn has_usages(&self) -> bool {
@@ -98,31 +115,33 @@ impl<'ctx, 'a> SymbolContext<'ctx, 'a> {
     //         > 0
     // }
     pub fn has_usages(&self) -> bool {
+        self.has_usages_of(self.symbol_id)
+    }
+    pub fn has_usages_of(&self, symbol_id: SymbolId) -> bool {
         let do_self_reassignment_check = self.symbol_flags.intersects(SymbolFlags::Variable);
         let do_self_call_check =
             !self.symbol_flags.intersects(SymbolFlags::ImportBinding | SymbolFlags::CatchVariable);
 
-        let rs: Vec<_> = 
-            self.ctx.symbols().get_resolved_references(self.symbol_id).filter(|r| r.is_read()).collect();
+        let rs: Vec<_> =
+            self.ctx.symbols().get_resolved_references(symbol_id).filter(|r| r.is_read()).collect();
         // for reference in
         //     self.ctx.symbols().get_resolved_references(self.symbol_id).filter(|r|
         //     r.is_read())
-        for reference in dbg!(rs)
-        {
+        for reference in rs {
             if do_self_reassignment_check && self.is_self_reassignment(reference) {
-                continue
+                continue;
             }
             if do_self_call_check && self.is_self_call(reference) {
-                continue
+                continue;
             }
-            return true
+            return true;
         }
 
         false
     }
 
     fn is_self_reassignment(&self, reference: &Reference) -> bool {
-        let Some(symbol_id) = dbg!(reference).symbol_id() else {
+        let Some(symbol_id) = reference.symbol_id() else {
             debug_assert!(
                 false,
                 "is_self_update() should only be called on resolved symbol references"
@@ -149,7 +168,7 @@ impl<'ctx, 'a> SymbolContext<'ctx, 'a> {
                         "While traversing {name}'s reference's parent nodes, found {name}'s declaration. This algorithm assumes that variable declarations do not appear in references."
                     );
                     // definitely used, short-circuit
-                    return false
+                    return false;
                 }
                 // When symbol is being assigned a new value, we flag the reference
                 // as only affecting itself until proven otherwise.
@@ -173,9 +192,7 @@ impl<'ctx, 'a> SymbolContext<'ctx, 'a> {
                         // variable is being used to index another variable, this is
                         // always a usage
                         // todo: check self index?
-                        SimpleAssignmentTarget::MemberAssignmentTarget(_) => {
-                            return false
-                        }
+                        SimpleAssignmentTarget::MemberAssignmentTarget(_) => return false,
                         _ => {
                             // debug_assert!(false, "is_self_update only supports AssignmentTargetIdentifiers right now. Please update this function. Found {t:#?}",);
                         }
@@ -201,7 +218,6 @@ impl<'ctx, 'a> SymbolContext<'ctx, 'a> {
     }
 
     fn is_self_call(&self, reference: &Reference) -> bool {
-        dbg!(reference);
         let scopes = self.ctx.scopes();
 
         // determine what scope the call occurred in
@@ -210,20 +226,25 @@ impl<'ctx, 'a> SymbolContext<'ctx, 'a> {
             .nodes()
             .iter_parents(node_id)
             .skip(1)
-            .filter(|n| matches!(n.kind(), AstKind::ParenthesizedExpression(_)))
+            .filter(|n| {
+                dbg!(n.kind().debug_name());
+                !matches!(n.kind(), AstKind::ParenthesizedExpression(_))
+            })
             .nth(0);
         if !matches!(
-            node.map(|n| n.kind()),
+            node.map(|n| dbg!(n.kind())),
             Some(AstKind::CallExpression(_) | AstKind::NewExpression(_))
         ) {
             return false;
         }
 
-        let scope_id = self.ctx.nodes().get_node(node_id).scope_id();
+        let call_scope_id = self.ctx.nodes().get_node(node_id).scope_id();
 
-        let is_called_inside_self = scopes.ancestors(scope_id).any(|scope_id| {
-            scope_id == self.scope_id && scopes.get_flags(scope_id).intersects(ScopeFlags::Function)
-        });
+        let is_called_inside_self = call_scope_id != self.scope_id()
+            && scopes.ancestors(call_scope_id).any(|scope_id| {
+                scope_id == self.scope_id
+                    && scopes.get_flags(scope_id).intersects(ScopeFlags::Function)
+            });
 
         return is_called_inside_self;
     }

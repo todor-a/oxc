@@ -63,25 +63,27 @@ fn test_args_simple() {
     let none = Some(json!([{ "args": "none" }]));
     let after_used = Some(json!([{ "args": "after-used" }]));
     let pass = vec![
-        // ("function foo(a) { return a }; foo()", all.clone()),
-        // ("function foo(a) { return }; foo()", none),
+        ("function foo(a) { return a }; foo()", all.clone()),
+        ("function foo(a) { return }; foo()", none),
         // after used
         ("function foo(a, b) { return b }; foo()", None),
         ("function foo(a, b) { return b }; foo()", after_used),
     ];
     let fail = vec![
-        // ("function foo(a) { return }; foo()", None),
-        // ("function foo(a = 1) { return }; foo()", None),
-        // ("function foo() { return }", None),
-        // ("function foo(a, b) { return a }; foo()", None),
-        // ("function foo(a, b) { return b }; foo()", all),
+        ("function foo(a) { return }; foo()", None),
+        ("function foo(a = 1) { return }; foo()", None),
+        ("function foo() { return }", None),
+        ("function foo(a, b) { return a }; foo()", None),
+        ("function foo(a, b) { return b }; foo()", all),
     ];
     Tester::new(NoUnusedVars::NAME, pass, fail).test();
 }
 
 #[test]
 fn test_args_unpacking() {
+    // let after_used = Some(json!([{ "args": "after-used" }]));
     let ignore_rest_siblings = Some(json!([{ "ignoreRestSiblings": true }]));
+    let all_ignore_rest_siblings = Some(json!([{ "args": "all", "ignoreRestSiblings": true }]));
     let ignore_arg_underscore = Some(json!([{ "destructuredArrayIgnorePattern": "^_" }]));
     let pass = vec![
         ("function baz([_b, foo]) { foo; };\nbaz()", ignore_arg_underscore),
@@ -91,8 +93,12 @@ fn test_args_unpacking() {
             ignore_rest_siblings.clone(),
         ),
         ("let foo, rest; ({ foo, ...rest } = something); console.log(rest);", ignore_rest_siblings),
+        ("function foo({a, ...rest}, b) { return b }; foo()", all_ignore_rest_siblings),
     ];
-    let fail = vec![];
+    let fail = vec![
+        ("function foo([a], b) { return b }; foo()", None),
+        ("function foo({a}, b) { return b }; foo()", None),
+    ];
     Tester::new(NoUnusedVars::NAME, pass, fail);
 }
 
