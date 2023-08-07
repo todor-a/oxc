@@ -268,7 +268,7 @@ impl Rule for NoUnusedVars {
                 ctx.diagnostic(NoUnusedVarsDiagnostic::import(name.clone(), module.span()));
             }
             AstKind::VariableDeclarator(decl) => {
-                if decl.kind.is_var() && self.vars == VarsOption::Local {
+                if decl.kind.is_var() && self.vars == VarsOption::Local && ctx.is_root() {
                     return;
                 }
                 if let Some(UnusedBindingResult(span, false)) =

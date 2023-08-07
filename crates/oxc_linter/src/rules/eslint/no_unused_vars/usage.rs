@@ -117,6 +117,7 @@ impl<'ctx, 'a> SymbolContext<'ctx, 'a> {
     pub fn has_usages(&self) -> bool {
         self.has_usages_of(self.symbol_id)
     }
+    
     pub fn has_usages_of(&self, symbol_id: SymbolId) -> bool {
         let do_self_reassignment_check = self.symbol_flags.intersects(SymbolFlags::Variable);
         let do_self_call_check =
@@ -210,6 +211,7 @@ impl<'ctx, 'a> SymbolContext<'ctx, 'a> {
                 | AstKind::ExpressionStatement(_) => {
                     break;
                 }
+                AstKind::YieldExpression(_) => return false,
                 _ => { /* continue up tree */ }
             }
         }
@@ -232,19 +234,32 @@ impl<'ctx, 'a> SymbolContext<'ctx, 'a> {
             })
             .nth(0);
         if !matches!(
-            node.map(|n| dbg!(n.kind())),
+            node.map(|n| {
+                println!("{}", n.kind().debug_name());
+                n.kind()
+            }),
             Some(AstKind::CallExpression(_) | AstKind::NewExpression(_))
         ) {
             return false;
         }
 
         let call_scope_id = self.ctx.nodes().get_node(node_id).scope_id();
+        // note: most nodes record what scope they were declared in. The
+        // exception is functions and classes, which record the scopes they create.
+        let decl_scope_id = self
+            .scopes()
+            .ancestors(self.scope_id)
+            .find(|scope_id| self.scopes().get_binding(*scope_id, self.name()).is_some())
+            .unwrap();
+        if call_scope_id == decl_scope_id {
+            return false;
+        };
 
-        let is_called_inside_self = call_scope_id != self.scope_id()
-            && scopes.ancestors(call_scope_id).any(|scope_id| {
-                scope_id == self.scope_id
-                    && scopes.get_flags(scope_id).intersects(ScopeFlags::Function)
-            });
+        let is_called_inside_self = scopes.ancestors(call_scope_id).any(|scope_id| {
+            // let flags = scopes.get_flags(scope_id);
+            // scope_id == decl_scope_id && flags.intersects(ScopeFlags::Function | ScopeFlags::Arrow)
+            scope_id == decl_scope_id
+        });
 
         return is_called_inside_self;
     }

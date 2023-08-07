@@ -442,7 +442,7 @@ impl<'a> AstKind<'a> {
             Self::ArrowExpression(_) => "ArrowExpression".into(),
             Self::AssignmentExpression(_) => "AssignmentExpression".into(),
             Self::AwaitExpression(_) => "AwaitExpression".into(),
-            Self::BinaryExpression(b) => format!("BinaryExpression{}", b.operator.as_str()).into(),
+            Self::BinaryExpression(b) => format!("BinaryExpression({})", b.operator.as_str()).into(),
             Self::CallExpression(_) => "CallExpression".into(),
             Self::ConditionalExpression(_) => "ConditionalExpression".into(),
             Self::LogicalExpression(_) => "LogicalExpression".into(),

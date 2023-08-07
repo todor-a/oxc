@@ -1,0 +1,900 @@
+---
+source: crates/oxc_linter/src/tester.rs
+expression: no_unused_vars
+---
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ function foox() { return foox(); }
+   ·          ────
+   ╰────
+  help: foox is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ (function() { function foox() { if (true) { return foox(); } } }())
+   ·                        ────
+   ╰────
+  help: foox is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ var a=10
+   ·     ─
+   ╰────
+  help: a is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ function f() { var a = 1; return function(){ f(a *= 2); }; }
+   ·          ─
+   ╰────
+  help: f is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ function f() { var a = 1; return function(){ f(a *= 2); }; }
+   ·                    ─
+   ╰────
+  help: a is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ function f() { var a = 1; return function(){ f(++a); }; }
+   ·          ─
+   ╰────
+  help: f is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ function f() { var a = 1; return function(){ f(++a); }; }
+   ·                    ─
+   ╰────
+  help: a is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ function foo(first, second) {
+   ·          ───
+ 2 │ doStuff(function() {
+   ╰────
+  help: foo is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ var a=10;
+   ·     ─
+   ╰────
+  help: a is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ var a=10; a=20;
+   ·     ─
+   ╰────
+  help: a is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ var a=10; (function() { var a = 1; alert(a); })();
+   ·     ─
+   ╰────
+  help: a is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ var a=10, b=0, c=null; alert(a+b)
+   ·                ─
+   ╰────
+  help: c is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ var a=10, b=0, c=null; setTimeout(function() { var b=2; alert(a+b+c); }, 0);
+   ·           ─
+   ╰────
+  help: b is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ var a=10, b=0, c=null; setTimeout(function() { var b=2; var c=2; alert(a+b+c); }, 0);
+   ·           ─
+   ╰────
+  help: b is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ var a=10, b=0, c=null; setTimeout(function() { var b=2; var c=2; alert(a+b+c); }, 0);
+   ·                ─
+   ╰────
+  help: c is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ function f(){var a=[];return a.map(function(){});}
+   ·          ─
+   ╰────
+  help: f is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ function f(){var a=[];return a.map(function g(){});}
+   ·          ─
+   ╰────
+  help: f is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ function foo() {function foo(x) {
+   ·          ───
+ 2 │ return x; }; return function() {return foo; }; }
+   ╰────
+  help: foo is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ function f(){var x;function a(){x=42;}function b(){alert(x);}}
+   ·          ─
+   ╰────
+  help: f is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ function f(){var x;function a(){x=42;}function b(){alert(x);}}
+   ·                             ─
+   ╰────
+  help: a is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ function f(){var x;function a(){x=42;}function b(){alert(x);}}
+   ·                                                ─
+   ╰────
+  help: b is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ function f(a) {}; f();
+   ·            ─
+   ╰────
+  help: a is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ function a(x, y, z){ return y; }; a();
+   ·                  ─
+   ╰────
+  help: z is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ var min = Math.min
+   ·     ───
+   ╰────
+  help: min is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ var min = {min: 1}
+   ·     ───
+   ╰────
+  help: min is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ Foo.bar = function(baz) { return 1; };
+   ·                    ───
+   ╰────
+  help: baz is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ var min = {min: 1}
+   ·     ───
+   ╰────
+  help: min is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ function gg(baz, bar) { return baz; }; gg();
+   ·                  ───
+   ╰────
+  help: bar is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ (function(foo, baz, bar) { return baz; })();
+   ·                     ───
+   ╰────
+  help: bar is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ (function(foo, baz, bar) { return baz; })();
+   ·           ───
+   ╰────
+  help: foo is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ (function(foo, baz, bar) { return baz; })();
+   ·                     ───
+   ╰────
+  help: bar is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ (function z(foo) { var bar = 33; })();
+   ·             ───
+   ╰────
+  help: foo is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ (function z(foo) { var bar = 33; })();
+   ·                        ───
+   ╰────
+  help: bar is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ (function z(foo) { z(); })();
+   ·             ───
+   ╰────
+  help: foo is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ function f() { var a = 1; return function(){ f(a = 2); }; }
+   ·          ─
+   ╰────
+  help: f is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ function f() { var a = 1; return function(){ f(a = 2); }; }
+   ·                    ─
+   ╰────
+  help: a is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ import x from "y";
+   · ──────────────────
+   ╰────
+  help: x is imported but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ export function fn2({ x, y }) {
+   ·                          ─
+ 2 │  console.log(x); 
+   ╰────
+  help: y is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ export function fn2( x, y ) {
+   ·                         ─
+ 2 │  console.log(x); 
+   ╰────
+  help: y is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ /*exported max*/ var max = 1, min = {min: 1}
+   ·                      ───
+   ╰────
+  help: max is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ /*exported max*/ var max = 1, min = {min: 1}
+   ·                               ───
+   ╰────
+  help: min is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ /*exported x*/ var { x, y } = z
+   ·                      ─
+   ╰────
+  help: x is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ /*exported x*/ var { x, y } = z
+   ·                         ─
+   ╰────
+  help: y is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ var _a; var b;
+   ·             ─
+   ╰────
+  help: b is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ var a; function foo() { var _b; var c_; } foo();
+   ·                                     ──
+   ╰────
+  help: c_ is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ function foo(a, _b) { } foo();
+   ·              ─
+   ╰────
+  help: a is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ function foo(a, _b, c) { return a; } foo();
+   ·                     ─
+   ╰────
+  help: c is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ function foo(_a) { } foo();
+   ·              ──
+   ╰────
+  help: _a is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ var [ firstItemIgnored, secondItem ] = items;
+   ·                         ──────────
+   ╰────
+  help: secondItem is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:2:1]
+ 2 │                 // should report _x
+ 3 │                 let _x, y;
+   ·                     ──
+ 4 │                 _x = 1;
+   ╰────
+  help: _x is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+    ╭─[no_unused_vars.tsx:8:1]
+  8 │                 // should report _a
+  9 │                 let _a, b;
+    ·                     ──
+ 10 │                 [_a, b] = foo;
+    ╰────
+  help: _a is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:2:1]
+ 2 │                 // should report _x
+ 3 │                 let _x, y;
+   ·                     ──
+ 4 │                 _x = 1;
+   ╰────
+  help: _x is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+    ╭─[no_unused_vars.tsx:8:1]
+  8 │                 // should report _a
+  9 │                 let _a, b;
+    ·                     ──
+ 10 │                 _a = 1;
+    ╰────
+  help: _a is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ (function(obj) { var name; for ( name in obj ) { i(); return; } })({});
+   ·                      ────
+   ╰────
+  help: name is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ (function(obj) { var name; for ( name in obj ) { } })({});
+   ·                      ────
+   ╰────
+  help: name is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ (function(obj) { for ( var name in obj ) { } })({});
+   ·                            ────
+   ╰────
+  help: name is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ (function(iter) { var name; for ( name of iter ) { i(); return; } })({});
+   ·                       ────
+   ╰────
+  help: name is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ (function(iter) { var name; for ( name of iter ) { } })({});
+   ·                       ────
+   ╰────
+  help: name is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ (function(iter) { for ( var name of iter ) { } })({});
+   ·                             ────
+   ╰────
+  help: name is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ const data = { type: 'coords', x: 1, y: 2 };
+ 2 │ const { type, ...coords } = data;
+   ·         ────
+ 3 │  console.log(coords);
+   ╰────
+  help: type is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ const data = { type: 'coords', x: 2, y: 2 };
+ 2 │ const { type, ...coords } = data;
+   ·                  ──────
+ 3 │  console.log(type)
+   ╰────
+  help: coords is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ let type, coords;
+   ·           ──────
+ 2 │ ({ type, ...coords } = data);
+   ╰────
+  help: coords is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ const data = { type: 'coords', x: 3, y: 2 };
+ 2 │ const { type, ...coords } = data;
+   ·                  ──────
+ 3 │  console.log(type)
+   ╰────
+  help: coords is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ const data = { vars: ['x','y'], x: 1, y: 2 };
+ 2 │ const { vars: [x], ...coords } = data;
+   ·                ─
+ 3 │  console.log(coords)
+   ╰────
+  help: x is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ const data = { defaults: { x: 0 }, x: 1, y: 2 };
+ 2 │ const { defaults: { x }, ...coords } = data;
+   ·                     ─
+ 3 │  console.log(coords)
+   ╰────
+  help: x is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ (({a, ...rest}) => {})
+   ·          ────
+   ╰────
+  help: rest is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ export default function(a) {}
+   ·                         ─
+   ╰────
+  help: a is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ export default function(a, b) { console.log(a); }
+   ·                            ─
+   ╰────
+  help: b is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ export default (function(a) {});
+   ·                          ─
+   ╰────
+  help: a is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ export default (function(a, b) { console.log(a); });
+   ·                             ─
+   ╰────
+  help: b is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ export default (a) => {};
+   ·                 ─
+   ╰────
+  help: a is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ export default (a, b) => { console.log(a); };
+   ·                    ─
+   ╰────
+  help: b is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ try{}catch(err){};
+   ·            ───
+   ╰────
+  help: err is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ try{}catch(err){};
+   ·            ───
+   ╰────
+  help: err is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ try{}catch(ignoreErr){}try{}catch(err){};
+   ·                                   ───
+   ╰────
+  help: err is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ try{}catch(error){}try{}catch(err){};
+   ·            ─────
+   ╰────
+  help: error is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ try{}catch(error){}try{}catch(err){};
+   ·                               ───
+   ╰────
+  help: err is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ try{}catch(err){};
+   ·            ───
+   ╰────
+  help: err is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ try{}catch(err){};
+   ·            ───
+   ╰────
+  help: err is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ var a = 0; a = a + 1;
+   ·     ─
+   ╰────
+  help: a is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ var a = 0; a = a + a;
+   ·     ─
+   ╰────
+  help: a is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ var a = 0; a += a + 1;
+   ·     ─
+   ╰────
+  help: a is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ var a = 0; a++;
+   ·     ─
+   ╰────
+  help: a is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ function foo(a) { a = a + 1 } foo();
+   ·              ─
+   ╰────
+  help: a is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ function foo(a) { a += a + 1 } foo();
+   ·              ─
+   ╰────
+  help: a is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ function foo(a) { a++ } foo();
+   ·              ─
+   ╰────
+  help: a is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ var a = 3; a = a * 5 + 6;
+   ·     ─
+   ╰────
+  help: a is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ var a = 2, b = 4; a = a * 2 + b;
+   ·     ─
+   ╰────
+  help: a is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:2:1]
+ 2 │                 while (a) {
+ 3 │                     function foo(b) {
+   ·                                  ─
+ 4 │                         b = b + 1;
+   ╰────
+  help: b is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ (function(a, b, c) {})
+   ·           ─
+   ╰────
+  help: a is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ (function(a, b, c) {})
+   ·              ─
+   ╰────
+  help: b is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ (function(a, b, {c, d}) {})
+   ·           ─
+   ╰────
+  help: a is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ (function(a, b, {c, d}) {})
+   ·              ─
+   ╰────
+  help: b is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ (function(a, b, {c, d}) {})
+   ·           ─
+   ╰────
+  help: a is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ (function(a, b, {c, d}) {})
+   ·              ─
+   ╰────
+  help: b is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ (function(a, b, {c, d}) {})
+   ·                     ─
+   ╰────
+  help: d is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ (function(a, b, {c, d}) {})
+   ·           ─
+   ╰────
+  help: a is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ (function(a, b, {c, d}) {})
+   ·              ─
+   ╰────
+  help: b is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ (function(a, b, {c, d}) {})
+   ·                  ─
+   ╰────
+  help: c is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:2:1]
+ 2 │                 while(a) {
+ 3 │                     function foo(b) {
+   ·                                  ─
+ 4 │                         b = b + 1;
+   ╰────
+  help: b is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ (function(a, b, c) {})
+   ·           ─
+   ╰────
+  help: a is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ (function(a, b, c) {})
+   ·              ─
+   ╰────
+  help: b is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ let x = 0; x++, 0;
+   ·     ─
+   ╰────
+  help: x is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ let x = 0; 0, x++;
+   ·     ─
+   ╰────
+  help: x is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ let x = 0; 0, (1, x++);
+   ·     ─
+   ╰────
+  help: x is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ let x = 0; x += 1, 0;
+   ·     ─
+   ╰────
+  help: x is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ let x = 0; 0, x += 1;
+   ·     ─
+   ╰────
+  help: x is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ let x = 0; 0, (1, x += 1);
+   ·     ─
+   ╰────
+  help: x is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ let z = 0; z = z + 1, z = 2;
+   ·     ─
+   ╰────
+  help: z is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ let z = 0; z = z + 1, z = 2; z = 3;
+   ·     ─
+   ╰────
+  help: z is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ let z = 0; z = z + 1, z = 2; z = z + 3;
+   ·     ─
+   ╰────
+  help: z is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ let x = 0; 0, x = x+1;
+   ·     ─
+   ╰────
+  help: x is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ let x = 0; x = x+1, 0;
+   ·     ─
+   ╰────
+  help: x is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ let x = 0; 0, (1, x=x+1);
+   ·     ─
+   ╰────
+  help: x is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ (function ({ a, b }, { c } ) { return b; })();
+   ·              ─
+   ╰────
+  help: a is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ (function ({ a, b }, { c } ) { return b; })();
+   ·                        ─
+   ╰────
+  help: c is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ (function ([ a ], [ b, c ] ) { return b; })();
+   ·              ─
+   ╰────
+  help: a is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ (function ([ a ], [ b, c ] ) { return b; })();
+   ·                        ─
+   ╰────
+  help: c is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ (function ([ a, b ], [ c ] ) { return b; })();
+   ·              ─
+   ╰────
+  help: a is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ (function ([ a, b ], [ c ] ) { return b; })();
+   ·                        ─
+   ╰────
+  help: c is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ (function(_a) {})();
+   ·           ──
+   ╰────
+  help: _a is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ (function(_a) {})();
+   ·           ──
+   ╰────
+  help: _a is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ var a = function() { a(); };
+   ·     ─
+   ╰────
+  help: a is declared but never used
+
+  ⚠ eslint(no-unused-vars): Unused variables are not allowed
+   ╭─[no_unused_vars.tsx:1:1]
+ 1 │ const a = 1; a += 1;
+   ·       ─
+   ╰────
+  help: a is declared but never used
+
+

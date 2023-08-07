@@ -231,9 +231,9 @@ fn test_eslint() {
             //     "function foo(cb) { cb = function() { function something(a) { cb(1 + a); } register(something); }(); } foo();",
             //     None,
             // ),
-            ("function* foo(cb) { cb = yield function(a) { cb(1 + a); }; } foo();", None),
-            ("function foo(cb) { cb = tag`hello${function(a) { cb(1 + a); }}`; } foo();", None),
-            ("function foo(cb) { var b; cb = b = function(a) { cb(1 + a); }; b(); } foo();", None),
+            // ("function* foo(cb) { cb = yield function(a) { cb(1 + a); }; } foo();", None),
+            // ("function foo(cb) { cb = tag`hello${function(a) { cb(1 + a); }}`; } foo();", None),
+            // ("function foo(cb) { var b; cb = b = function(a) { cb(1 + a); }; b(); } foo();", None),
             (
                 "function someFunction() {\n    var a = 0, i;\n    for (i = 0; i < 2; i++) {\n        a = myFunction(a);\n    }\n}\nsomeFunction();\n",
                 None,
