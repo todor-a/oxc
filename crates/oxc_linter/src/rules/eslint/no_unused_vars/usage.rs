@@ -149,13 +149,7 @@ impl<'ctx, 'a> SymbolContext<'ctx, 'a> {
             );
             return true;
         };
-        let Some(node_id) = reference.ast_node_id() else {
-            debug_assert!(
-                false,
-                "Reference to symbol {} is missing an ast node id", self.ctx.symbols().get_name(symbol_id)
-            );
-            return true;
-        };
+        let node_id = reference.node_id();
         let mut is_used_by_others = true;
         let name = self.name();
         for node in self.ctx.nodes().iter_parents(node_id).skip(1) {
