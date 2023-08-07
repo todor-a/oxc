@@ -6,6 +6,29 @@ use crate::tester::Tester;
 use crate::{rule::RuleMeta, rules::eslint::no_unused_vars::NoUnusedVars};
 use serde_json;
 
+#[test]
+fn sandbox() {
+    let pass = vec![
+        // "function foo() {} foo();",
+        // "(function() { var doSomething = function doSomething() {}; doSomething() }())"
+        // "function* foo(cb) { cb = yield function(a) { cb(1 + a); }; } foo();",
+        // "(function() { var doSomething = function doSomething() {}; doSomething() }())",
+    ];
+    let fail = vec![
+
+        // "var a; function foo() { var _b; var c_; } foo();",
+        (
+            "var a; function foo() { var _b; var c_; } foo();",
+            Some(serde_json::json!([{ "vars": "local", "varsIgnorePattern": "^_" }])),
+        )
+        //
+        // "function foox() { return foox(); }",
+            // "function foox() { return foox(); }"
+    ];
+
+    Tester::new(NoUnusedVars::NAME, pass, fail).test();
+}
+
 #[allow(clippy::too_many_lines)]
 #[test]
 fn test_eslint() {

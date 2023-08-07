@@ -223,7 +223,7 @@ impl<'ctx, 'a> SymbolContext<'ctx, 'a> {
         let scopes = self.ctx.scopes();
 
         // determine what scope the call occurred in
-        let Some(node_id) = reference.ast_node_id() else { return true };
+        let node_id = reference.node_id();
         let node = self
             .nodes()
             .iter_parents(node_id)
