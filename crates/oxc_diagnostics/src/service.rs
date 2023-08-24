@@ -1,16 +1,17 @@
 use std::{
-    cell::Cell,
     io::{BufWriter, Write},
     path::{Path, PathBuf},
-    sync::mpsc,
-    sync::Arc,
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        mpsc, Arc,
+    },
 };
 
 use crate::{miette::NamedSource, Error, GraphicalReportHandler, MinifiedFileError, Severity};
 
 pub type DiagnosticTuple = (PathBuf, Vec<Error>);
-pub type DiagnosticSender = mpsc::Sender<Option<DiagnosticTuple>>;
-pub type DiagnosticReceiver = mpsc::Receiver<Option<DiagnosticTuple>>;
+pub type DiagnosticSender = mpsc::Sender<DiagnosticTuple>;
+pub type DiagnosticReceiver = mpsc::Receiver<DiagnosticTuple>;
 
 pub struct DiagnosticService {
     /// Disable reporting on warnings, only errors are reported
@@ -21,25 +22,19 @@ pub struct DiagnosticService {
     max_warnings: Option<usize>,
 
     /// Total number of warnings received
-    warnings_count: Cell<usize>,
+    warnings_count: AtomicUsize,
 
     /// Total number of errors received
-    errors_count: Cell<usize>,
-
-    sender: DiagnosticSender,
-    receiver: DiagnosticReceiver,
+    errors_count: AtomicUsize,
 }
 
 impl Default for DiagnosticService {
     fn default() -> Self {
-        let (sender, receiver) = mpsc::channel();
         Self {
             quiet: false,
             max_warnings: None,
-            warnings_count: Cell::new(0),
-            errors_count: Cell::new(0),
-            sender,
-            receiver,
+            warnings_count: AtomicUsize::new(0),
+            errors_count: AtomicUsize::new(0),
         }
     }
 }
@@ -57,20 +52,20 @@ impl DiagnosticService {
         self
     }
 
-    pub fn sender(&self) -> &DiagnosticSender {
-        &self.sender
+    pub fn channel() -> (DiagnosticSender, DiagnosticReceiver) {
+        mpsc::channel()
     }
 
     pub fn warnings_count(&self) -> usize {
-        self.warnings_count.get()
+        self.warnings_count.load(Ordering::SeqCst)
     }
 
     pub fn errors_count(&self) -> usize {
-        self.errors_count.get()
+        self.errors_count.load(Ordering::SeqCst)
     }
 
     pub fn max_warnings_exceeded(&self) -> bool {
-        self.max_warnings.map_or(false, |max_warnings| self.warnings_count.get() > max_warnings)
+        self.max_warnings.map_or(false, |max_warnings| self.warnings_count() > max_warnings)
     }
 
     pub fn wrap_diagnostics(
@@ -89,11 +84,11 @@ impl DiagnosticService {
     /// # Panics
     ///
     /// * When the writer fails to write
-    pub fn run(&self) {
+    pub fn run(&self, rx_error: &DiagnosticReceiver) {
         let mut buf_writer = BufWriter::new(std::io::stdout());
         let handler = GraphicalReportHandler::new();
 
-        while let Ok(Some((path, diagnostics))) = self.receiver.recv() {
+        while let Ok((path, diagnostics)) = rx_error.recv() {
             let mut output = String::new();
             for diagnostic in diagnostics {
                 let severity = diagnostic.severity();
@@ -101,12 +96,10 @@ impl DiagnosticService {
                 let is_error = severity.is_none() || severity == Some(Severity::Error);
                 if is_warning || is_error {
                     if is_warning {
-                        let warnings_count = self.warnings_count() + 1;
-                        self.warnings_count.set(warnings_count);
+                        self.warnings_count.fetch_add(1, Ordering::SeqCst);
                     }
                     if is_error {
-                        let errors_count = self.errors_count() + 1;
-                        self.errors_count.set(errors_count);
+                        self.errors_count.fetch_add(1, Ordering::SeqCst);
                     }
                     // The --quiet flag follows ESLint's --quiet behavior as documented here: https://eslint.org/docs/latest/use/command-line-interface#--quiet
                     // Note that it does not disable ALL diagnostics, only Warning diagnostics

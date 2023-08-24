@@ -22,6 +22,7 @@ pub use oxc_syntax::{
 };
 
 pub use crate::{
+    module_record::ModuleRecordBuilder,
     node::{AstNode, AstNodeId, AstNodes, NodeFlags},
     reference::{Reference, ReferenceFlag, ReferenceId},
     scope::ScopeTree,
@@ -77,7 +78,7 @@ impl<'a> Semantic<'a> {
         &self.jsdoc
     }
 
-    pub fn module_record(&self) -> &ModuleRecord {
+    pub fn module_record(&self) -> &Arc<ModuleRecord> {
         &self.module_record
     }
 

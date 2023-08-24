@@ -7,7 +7,7 @@ use std::{
 };
 
 use oxc_diagnostics::DiagnosticService;
-use oxc_linter::{LintOptions, LintService, Linter, PathWork};
+use oxc_linter::{LintOptions, LintService, Linter};
 
 use crate::{command::LintOptions as CliLintOptions, walk::Walk, CliRunResult, LintResult, Runner};
 
@@ -50,28 +50,37 @@ impl Runner for LintRunner {
         let diagnostic_service = DiagnosticService::default()
             .with_quiet(warning_options.quiet)
             .with_max_warnings(warning_options.max_warnings);
+        let diagnostic_service = Arc::new(diagnostic_service);
 
         let number_of_files = Arc::new(AtomicUsize::new(0));
 
-        let lint_service = LintService::new(Arc::clone(&linter));
-        let tx_path = lint_service.tx_path.clone();
-        lint_service.run(&diagnostic_service.sender().clone());
+        let lint_service = Arc::new(LintService::new(Arc::clone(&linter)));
 
-        rayon::spawn({
+        rayon::scope({
+            let diagnostic_service = Arc::clone(&diagnostic_service);
             let number_of_files = Arc::clone(&number_of_files);
+            let lint_service = Arc::clone(&lint_service);
             let walk = Walk::new(&paths, &ignore_options);
-            move || {
+            let (tx_error, rx_error) = DiagnosticService::channel();
+            move |s| {
+                s.spawn(move |_| {
+                    diagnostic_service.run(&rx_error);
+                });
+
                 let mut count = 0;
                 for path in walk.iter() {
                     count += 1;
-                    tx_path.send(PathWork::Begin(path)).unwrap();
+                    let lint_service = Arc::clone(&lint_service);
+                    let tx_error = tx_error.clone();
+                    s.spawn(move |_| {
+                        // let path = path.canonicalize().unwrap();
+                        lint_service.run_path(&path, &tx_error);
+                    });
                 }
-                tx_path.send(PathWork::Done).unwrap();
                 number_of_files.store(count, Ordering::SeqCst);
             }
         });
 
-        diagnostic_service.run();
         linter.print_execution_times_if_enable();
 
         CliRunResult::LintResult(LintResult {

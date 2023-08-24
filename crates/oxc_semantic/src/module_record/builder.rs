@@ -6,7 +6,7 @@ use oxc_syntax::module_record::*;
 
 #[derive(Debug, Default)]
 pub struct ModuleRecordBuilder {
-    pub module_record: ModuleRecord,
+    pub(crate) module_record: ModuleRecord,
     export_entries: Vec<ExportEntry>,
 }
 

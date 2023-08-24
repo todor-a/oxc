@@ -1,10 +1,16 @@
 use std::{path::PathBuf, sync::Arc};
 
 use oxc_allocator::Allocator;
-use oxc_diagnostics::miette::{GraphicalReportHandler, GraphicalTheme, NamedSource};
+use oxc_diagnostics::{
+    miette::{GraphicalReportHandler, GraphicalTheme, NamedSource},
+    DiagnosticService,
+};
 use serde_json::Value;
 
-use crate::{rules::RULES, Fixer, LintOptions, LintService, Linter, RuleEnum};
+use crate::{
+    rules::{RuleEnum, RULES},
+    Fixer, LintOptions, LintService, Linter,
+};
 
 #[derive(Eq, PartialEq)]
 enum TestResult {
@@ -96,11 +102,15 @@ impl Tester {
     fn run(&mut self, source_text: &str, config: Option<Value>, is_fix: bool) -> TestResult {
         let name = self.rule_name.replace('-', "_");
         let path = PathBuf::from(name).with_extension("tsx");
-        let allocator = Allocator::default();
         let rule = self.find_rule().read_json(config);
+
+        let allocator = Allocator::default();
         let options = LintOptions::default().with_fix(is_fix);
         let linter = Arc::new(Linter::from_options(options).with_rules(vec![rule]));
-        let result = LintService::run_source(&linter, &path, &allocator, source_text, false);
+
+        let (tx_error, _) = DiagnosticService::channel(); // unused for test
+        let result =
+            LintService::new(linter).run_source(&path, &allocator, source_text, false, &tx_error);
 
         if result.is_empty() {
             return TestResult::Passed;
