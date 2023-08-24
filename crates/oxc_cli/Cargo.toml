@@ -38,6 +38,7 @@ ignore = { workspace = true, features = ["simd-accel"] }
 miette = { workspace = true, features = ["fancy-no-backtrace"] }
 rayon  = { workspace = true }
 bpaf   = { workspace = true, features = ["derive", "autocomplete", "bright-color"] }
+tracing-subscriber = { workspace = true, features = ["env-filter"] }
 
 [dev-dependencies]
 insta-cmd = { workspace = true }

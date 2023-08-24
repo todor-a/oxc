@@ -9,10 +9,11 @@ mod module_record_tests {
     use oxc_span::{SourceType, Span};
     #[allow(clippy::wildcard_imports)]
     use oxc_syntax::module_record::*;
+    use std::sync::Arc;
 
     use crate::SemanticBuilder;
 
-    fn build(source_text: &str) -> ModuleRecord {
+    fn build(source_text: &str) -> Arc<ModuleRecord> {
         let source_type = SourceType::default().with_module(true);
         let allocator = Allocator::default();
         let ret = Parser::new(&allocator, source_text, source_type).parse();
