@@ -4,7 +4,7 @@ use oxc_diagnostics::{
     thiserror::Error,
 };
 use oxc_macros::declare_oxc_lint;
-use oxc_span::{GetSpan, Span};
+use oxc_span::Span;
 
 use crate::{context::LintContext, rule::Rule, AstNode};
 
@@ -42,36 +42,38 @@ impl Rule for NoVarRequires {
             return;
         }
         let AstKind::CallExpression(expr) = node.kind() else { return };
+        if expr.is_require_call() {
+            if ctx.scopes().get_bindings(node.scope_id()).contains_key("require") {
+                return;
+            }
 
-        if expr.is_require_call()
-            && !ctx.scopes().get_bindings(node.scope_id()).contains_key("require")
-        {
-            // If the parent is an expression statement => this is a top level require()
-            // Or, if the parent is a chain expression (require?.()) and
-            // the grandparent is an expression statement => this is a top level require()
-            let is_expression_statement = {
-                let parent_node = ctx.nodes().parent_node(node.id());
-                let grandparent_node = parent_node.and_then(|x| ctx.nodes().parent_node(x.id()));
-                matches!(
-                    (
-                        parent_node.map(oxc_semantic::AstNode::kind),
-                        grandparent_node.map(oxc_semantic::AstNode::kind)
-                    ),
-                    (Some(AstKind::ExpressionStatement(_)), _)
-                        | (
-                            Some(AstKind::ChainExpression(_)),
-                            Some(AstKind::ExpressionStatement(_))
-                        )
+            // Skip first ancestor as that will be the CallExpression
+            // Then, skip every `Argument` or `ChainExpression`, as for our matching
+            // we will want the parent of those nodes
+            if let Some(parent_node_id) = ctx.nodes().ancestors(node.id()).skip(1).find(|x| {
+                !matches!(
+                    ctx.nodes().get_node(*x).kind(),
+                    AstKind::Argument(_) | AstKind::ChainExpression(_)
                 )
-            };
-
-            // If this is an expression statement, it means the `require()`'s return value is unused.
-            // If the return value is unused, this isn't a problem.
-            if !is_expression_statement {
-                ctx.diagnostic(NoVarRequiresDiagnostic(node.kind().span()));
+            }) {
+                if is_target_node(&ctx.nodes().get_node(parent_node_id).kind()) {
+                    ctx.diagnostic(NoVarRequiresDiagnostic(expr.span));
+                }
             }
         }
     }
+}
+
+fn is_target_node(node_kind: &AstKind<'_>) -> bool {
+    matches!(
+        node_kind,
+        AstKind::CallExpression(_)
+            | AstKind::MemberExpression(_)
+            | AstKind::NewExpression(_)
+            | AstKind::TSAsExpression(_)
+            | AstKind::TSTypeAssertion(_)
+            | AstKind::VariableDeclarator(_)
+    )
 }
 
 #[test]
