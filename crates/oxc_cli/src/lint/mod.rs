@@ -26,6 +26,7 @@ impl Runner for LintRunner {
         let CliLintOptions {
             paths,
             filter,
+            import_plugin,
             warning_options,
             ignore_options,
             fix_options,
@@ -34,11 +35,16 @@ impl Runner for LintRunner {
 
         let now = std::time::Instant::now();
 
+        let paths = Walk::new(&paths, &ignore_options).iter().collect::<Vec<_>>();
+        let number_of_files = paths.len();
+
+        let cwd = std::env::current_dir().unwrap().into_boxed_path();
         let lint_options = LintOptions::default()
             .with_filter(filter)
             .with_fix(fix_options.fix)
-            .with_timing(misc_options.timing);
-        let lint_service = LintService::new(lint_options);
+            .with_timing(misc_options.timing)
+            .with_import_plugin(import_plugin);
+        let lint_service = LintService::new(cwd, &paths, lint_options);
 
         let diagnostic_service = DiagnosticService::default()
             .with_quiet(warning_options.quiet)
