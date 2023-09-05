@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use oxc_allocator::Allocator;
 use oxc_diagnostics::miette::{GraphicalReportHandler, GraphicalTheme, NamedSource};
@@ -21,6 +21,7 @@ pub struct Tester {
     expect_fail: Vec<(String, Option<Value>)>,
     expect_fix: Vec<(String, String, Option<Value>)>,
     snapshot: String,
+    cwd: Box<Path>,
 }
 
 impl Tester {
@@ -32,6 +33,7 @@ impl Tester {
         let rule_path = PathBuf::from(rule_name.replace('-', "_")).with_extension("tsx");
         let expect_pass = expect_pass.into_iter().map(|(s, r)| (s.into(), r)).collect::<Vec<_>>();
         let expect_fail = expect_fail.into_iter().map(|(s, r)| (s.into(), r)).collect::<Vec<_>>();
+        let cwd = PathBuf::from("./fixtures/import").canonicalize().unwrap().into_boxed_path();
         Self {
             rule_path,
             rule_name,
@@ -39,6 +41,7 @@ impl Tester {
             expect_fail,
             expect_fix: vec![],
             snapshot: String::new(),
+            cwd,
         }
     }
 
@@ -114,8 +117,9 @@ impl Tester {
         let rule = self.find_rule().read_json(config);
         let options = LintOptions::default().with_fix(is_fix).with_import_plugin(true);
         let linter = Linter::from_options(options).with_rules(vec![rule]);
-        let cwd = PathBuf::new().into_boxed_path();
-        let lint_service = LintService::from_linter(cwd, &[path.clone().into_boxed_path()], linter);
+        dbg!(&self.cwd);
+        let lint_service =
+            LintService::from_linter(self.cwd.clone(), &[path.clone().into_boxed_path()], linter);
         let diagnostic_service = DiagnosticService::default();
         let tx_error = diagnostic_service.sender();
         let result = lint_service.run_source(&allocator, source_text, false, tx_error);

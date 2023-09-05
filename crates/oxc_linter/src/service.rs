@@ -214,7 +214,7 @@ impl Runtime {
                 .flatten()
                 .filter(|r| !self.module_map.contains_key(r.path()))
                 .for_each_with(tx_error, |tx_error, resolution| {
-                    self.process_path(resolution.path().strip_prefix(cwd).unwrap(), tx_error);
+                    self.process_path(resolution.path(), tx_error);
                 });
         }
 
