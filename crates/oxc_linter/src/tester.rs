@@ -15,6 +15,7 @@ enum TestResult {
 }
 
 pub struct Tester {
+    rule_path: PathBuf,
     rule_name: &'static str,
     expect_pass: Vec<(String, Option<Value>)>,
     expect_fail: Vec<(String, Option<Value>)>,
@@ -28,9 +29,17 @@ impl Tester {
         expect_pass: Vec<(S, Option<Value>)>,
         expect_fail: Vec<(S, Option<Value>)>,
     ) -> Self {
+        let rule_path = PathBuf::from(rule_name.replace('-', "_")).with_extension("tsx");
         let expect_pass = expect_pass.into_iter().map(|(s, r)| (s.into(), r)).collect::<Vec<_>>();
         let expect_fail = expect_fail.into_iter().map(|(s, r)| (s.into(), r)).collect::<Vec<_>>();
-        Self { rule_name, expect_pass, expect_fail, expect_fix: vec![], snapshot: String::new() }
+        Self {
+            rule_path,
+            rule_name,
+            expect_pass,
+            expect_fail,
+            expect_fix: vec![],
+            snapshot: String::new(),
+        }
     }
 
     pub fn new_without_config<S: Into<String>>(
@@ -46,6 +55,11 @@ impl Tester {
     pub fn expect_fix<S: Into<String>>(mut self, expect_fix: Vec<(S, S, Option<Value>)>) -> Self {
         self.expect_fix =
             expect_fix.into_iter().map(|(s1, s2, r)| (s1.into(), s2.into(), r)).collect::<Vec<_>>();
+        self
+    }
+
+    pub fn with_rule_path_extension(mut self, extension: &str) -> Self {
+        self.rule_path.set_extension(extension);
         self
     }
 
@@ -95,11 +109,10 @@ impl Tester {
     }
 
     fn run(&mut self, source_text: &str, config: Option<Value>, is_fix: bool) -> TestResult {
-        let name = self.rule_name.replace('-', "_");
-        let path = PathBuf::from(name).with_extension("tsx");
+        let path = &self.rule_path;
         let allocator = Allocator::default();
         let rule = self.find_rule().read_json(config);
-        let options = LintOptions::default().with_fix(is_fix);
+        let options = LintOptions::default().with_fix(is_fix).with_import_plugin(true);
         let linter = Linter::from_options(options).with_rules(vec![rule]);
         let cwd = PathBuf::new().into_boxed_path();
         let lint_service = LintService::from_linter(cwd, &[path.clone().into_boxed_path()], linter);

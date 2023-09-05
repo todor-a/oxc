@@ -5,6 +5,10 @@
 //! These modules are declared manually because `cargo fmt` stops formatting these files with they
 //! are inside a proc macro.
 
+mod import {
+    pub mod named;
+}
+
 mod deepscan {
     pub mod bad_array_method_on_arguments;
     pub mod bad_bitwise_operator;
@@ -107,6 +111,7 @@ mod unicorn {
 }
 
 oxc_macros::declare_all_lint_rules! {
+    import::named,
     deepscan::bad_array_method_on_arguments,
     deepscan::bad_bitwise_operator,
     deepscan::bad_comparison_sequence,
@@ -169,28 +174,28 @@ oxc_macros::declare_all_lint_rules! {
     eslint::require_yield,
     eslint::use_isnan,
     eslint::valid_typeof,
+    jest::expect_expect,
+    jest::no_alias_methods,
+    jest::no_commented_out_tests,
+    jest::no_conditional_expect,
+    jest::no_disabled_tests,
+    jest::no_focused_tests,
+    jest::no_test_prefixes,
+    jest::valid_describe_callback,
     typescript::adjacent_overload_signatures,
     typescript::ban_ts_comment,
     typescript::consistent_type_exports,
     typescript::no_duplicate_enum_values,
     typescript::no_empty_interface,
     typescript::no_extra_non_null_assertion,
+    typescript::no_misused_new,
+    typescript::no_namespace,
     typescript::no_non_null_asserted_optional_chain,
+    typescript::no_this_alias,
     typescript::no_unnecessary_type_constraint,
     typescript::no_unsafe_declaration_merging,
-    typescript::no_misused_new,
-    typescript::no_this_alias,
-    typescript::no_namespace,
     typescript::no_var_requires,
     typescript::prefer_as_const,
-    jest::no_disabled_tests,
-    jest::no_test_prefixes,
-    jest::no_focused_tests,
-    jest::valid_describe_callback,
-    jest::no_commented_out_tests,
-    jest::expect_expect,
-    jest::no_alias_methods,
-    jest::no_conditional_expect,
     unicorn::no_instanceof_array,
-    unicorn::no_unnecessary_await
+    unicorn::no_unnecessary_await,
 }
