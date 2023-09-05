@@ -37,41 +37,42 @@ impl Rule for Named {
         if semantic.source_type().is_typescript() {
             return;
         }
-        // let module_map = ctx.module_map();
+        let module_map = ctx.module_map();
         let module_record = semantic.module_record();
+        dbg!(module_map);
         dbg!(module_record);
-        for import_entry in &module_record.import_entries {
-            let ImportImportName::Name(import_name) = &import_entry.import_name else {
-                continue;
-            };
-            let resolved_module_requests = module_record.resolved_module_requests.read().unwrap();
-            let module_request_name = import_entry.module_request.name();
-            let Some(remote_module_path) = resolved_module_requests.get(module_request_name) else {
-                continue;
-            };
-            let Some(remote_module_record) = module_map.get(remote_module_path) else {
-                continue;
-            };
-            if remote_module_record.exported_bindings.contains_key(import_name.name()) {
-                continue;
-            }
-            let star_export_bindings_read =
-                remote_module_record.star_export_bindings.read().unwrap();
-            if !star_export_bindings_read.is_empty()
-                && star_export_bindings_read
-                    .values()
-                    .flatten()
-                    .any(|binding| *binding == import_name.name())
-            {
-                continue;
-            }
-            ctx.diagnostic(NamedDiagnostic(
-                import_name.name().clone(),
-                module_request_name.clone(),
-                import_name.span(),
-            ));
-            drop(resolved_module_requests);
-        }
+        // for import_entry in &module_record.import_entries {
+        // let ImportImportName::Name(import_name) = &import_entry.import_name else {
+        // continue;
+        // };
+        // let resolved_module_requests = module_record.resolved_module_requests.read().unwrap();
+        // let module_request_name = import_entry.module_request.name();
+        // let Some(remote_module_path) = resolved_module_requests.get(module_request_name) else {
+        // continue;
+        // };
+        // let Some(remote_module_record) = module_map.get(remote_module_path) else {
+        // continue;
+        // };
+        // if remote_module_record.exported_bindings.contains_key(import_name.name()) {
+        // continue;
+        // }
+        // let star_export_bindings_read =
+        // remote_module_record.star_export_bindings.read().unwrap();
+        // if !star_export_bindings_read.is_empty()
+        // && star_export_bindings_read
+        // .values()
+        // .flatten()
+        // .any(|binding| *binding == import_name.name())
+        // {
+        // continue;
+        // }
+        // ctx.diagnostic(NamedDiagnostic(
+        // import_name.name().clone(),
+        // module_request_name.clone(),
+        // import_name.span(),
+        // ));
+        // drop(resolved_module_requests);
+        // }
         // }
     }
 }

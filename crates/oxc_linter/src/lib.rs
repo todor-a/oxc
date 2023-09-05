@@ -28,7 +28,10 @@ pub use crate::{
     rule::RuleCategory,
     service::LintService,
 };
-pub(crate) use rules::{RuleEnum, RULES};
+pub(crate) use crate::{
+    context::ModuleMap,
+    rules::{RuleEnum, RULES},
+};
 
 #[derive(Debug)]
 pub struct Linter {

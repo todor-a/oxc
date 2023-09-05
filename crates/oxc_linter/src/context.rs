@@ -1,8 +1,9 @@
-use std::{cell::RefCell, rc::Rc};
+use dashmap::DashMap;
+use std::{cell::RefCell, path::Path, rc::Rc, sync::Arc};
 
 use oxc_diagnostics::Error;
 use oxc_formatter::{Formatter, FormatterOptions};
-use oxc_semantic::{AstNodes, JSDocComment, ScopeTree, Semantic, SymbolTable};
+use oxc_semantic::{AstNodes, JSDocComment, ModuleRecord, ScopeTree, Semantic, SymbolTable};
 use oxc_span::SourceType;
 
 use crate::{
@@ -10,6 +11,8 @@ use crate::{
     fixer::{Fix, Message},
     AstNode,
 };
+
+pub type ModuleMap = DashMap<Box<Path>, Arc<ModuleRecord>>;
 
 pub struct LintContext<'a> {
     semantic: Rc<Semantic<'a>>,
@@ -22,6 +25,8 @@ pub struct LintContext<'a> {
     fix: bool,
 
     current_rule_name: &'static str,
+
+    module_map: Arc<ModuleMap>,
 }
 
 impl<'a> LintContext<'a> {
@@ -34,6 +39,7 @@ impl<'a> LintContext<'a> {
             disable_directives,
             fix: false,
             current_rule_name: "",
+            module_map: Arc::new(ModuleMap::default()),
         }
     }
 
@@ -55,8 +61,18 @@ impl<'a> LintContext<'a> {
         self.semantic().source_type()
     }
 
+    pub fn module_map(&self) -> &ModuleMap {
+        &self.module_map
+    }
+
     pub fn with_rule_name(&mut self, name: &'static str) {
         self.current_rule_name = name;
+    }
+
+    #[must_use]
+    pub fn with_module_map(mut self, module_map: Arc<ModuleMap>) -> Self {
+        self.module_map = module_map;
+        self
     }
 
     /* Diagnostics */

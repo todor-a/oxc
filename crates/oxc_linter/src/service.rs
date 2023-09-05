@@ -1,4 +1,3 @@
-use dashmap::DashMap;
 use std::{
     collections::HashMap,
     fs,
@@ -11,11 +10,11 @@ use oxc_allocator::Allocator;
 use oxc_diagnostics::{DiagnosticSender, DiagnosticService};
 use oxc_parser::Parser;
 use oxc_resolver::{ResolveOptions, Resolver};
-use oxc_semantic::{ModuleRecord, SemanticBuilder};
+use oxc_semantic::SemanticBuilder;
 use oxc_span::{SourceType, VALID_EXTENSIONS};
 use rustc_hash::FxHashSet;
 
-use crate::{Fixer, LintContext, LintOptions, Linter, Message};
+use crate::{Fixer, LintContext, LintOptions, Linter, Message, ModuleMap};
 use rayon::{iter::ParallelBridge, prelude::ParallelIterator};
 
 pub struct LintService {
@@ -98,15 +97,13 @@ enum CacheStateEntry {
     PendingStore(usize),
 }
 
-type ModuleMap = DashMap<Box<Path>, Arc<ModuleRecord>>;
-
 pub struct Runtime {
     cwd: Box<Path>,
     /// All paths to lint
     paths: FxHashSet<Box<Path>>,
     linter: Linter,
     resolver: Resolver,
-    module_map: ModuleMap,
+    module_map: Arc<ModuleMap>,
     cache_state: CacheState,
 }
 
@@ -117,7 +114,7 @@ impl Runtime {
             paths: paths.iter().cloned().collect(),
             linter,
             resolver: Self::resolver(),
-            module_map: ModuleMap::default(),
+            module_map: Arc::new(ModuleMap::default()),
             cache_state: CacheState::default(),
         }
     }
@@ -224,7 +221,8 @@ impl Runtime {
             return semantic_ret.errors.into_iter().map(|err| Message::new(err, None)).collect();
         };
 
-        let lint_ctx = LintContext::new(&Rc::new(semantic_ret.semantic));
+        let lint_ctx = LintContext::new(&Rc::new(semantic_ret.semantic))
+            .with_module_map(Arc::clone(&self.module_map));
         self.linter.run(lint_ctx)
     }
 
